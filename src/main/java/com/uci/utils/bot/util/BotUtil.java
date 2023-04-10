@@ -12,6 +12,7 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.ObjectReader;
 import com.fasterxml.jackson.databind.node.ArrayNode;
+import com.uci.utils.dto.Result;
 import io.r2dbc.postgresql.codec.Json;
 import org.springframework.format.datetime.DateFormatter;
 import org.springframework.stereotype.Component;
@@ -36,12 +37,30 @@ public class BotUtil {
 	 */
 	public static String getBotValidFromJsonNode(JsonNode data) {
 		String status = data.findValue("status").asText();
-    	String startDate = data.findValue("startDate").asText();
-    	String endDate = data.findValue("endDate").asText();
-		
-    	log.info("Bot Status: "+status+", Start Date: "+startDate+", End Date: "+endDate);
-    	
-    	return getBotValid(status, startDate, endDate);
+		String startDate = data.findValue("startDate").asText();
+		String endDate = data.findValue("endDate").asText();
+
+		log.info("Bot Status: "+status+", Start Date: "+startDate+", End Date: "+endDate);
+
+		return getBotValid(status, startDate, endDate);
+	}
+
+
+	public static String getBotValidFromResult(Result result) {
+		String status = null;
+		String startDate = null;
+		String endDate = null;
+		if (result.getStatus() != null) {
+			status = result.getStatus();
+		}
+		if (result.getStartDate() != null) {
+			startDate = result.getStartDate();
+		}
+		if (result.getEndDate() != null) {
+			endDate = result.getEndDate();
+		}
+		log.info("Bot Status: " + status + ", Start Date: " + startDate + ", End Date: " + endDate);
+		return getBotValid(status, startDate, endDate);
 	}
 
 	/**
@@ -83,12 +102,12 @@ public class BotUtil {
 	 */
 	public static Boolean checkBotValidFromJsonNode(JsonNode data) {
 		String status = data.findValue("status").asText();
-    	String startDate = data.findValue("startDate").asText();
-    	String endDate = data.findValue("endDate").asText();
-		
-    	log.info("Bot Status: "+status+", Start Date: "+startDate+", End Date: "+endDate);
-    	
-    	return checkBotValid(status, startDate, endDate);
+		String startDate = data.findValue("startDate").asText();
+		String endDate = data.findValue("endDate").asText();
+
+		log.info("Bot Status: "+status+", Start Date: "+startDate+", End Date: "+endDate);
+
+		return checkBotValid(status, startDate, endDate);
 	}
 
 	/**
@@ -99,7 +118,7 @@ public class BotUtil {
 	 * @return
 	 */
 	public static Boolean checkBotValid(String status, String startDate, String endDate) {
-		if(checkBotLiveStatus(status) && checkBotStartDateValid(startDate) 
+		if(checkBotLiveStatus(status) && checkBotStartDateValid(startDate)
 				&& checkBotEndDateValid(endDate)
 				&& !(startDate == null || startDate == "null" || startDate.isEmpty())) {
 			return true;
@@ -129,20 +148,20 @@ public class BotUtil {
 	public static Boolean checkBotStartDateValid(String startDate) {
 		try {
 			DateTimeFormatter fmt = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'");
-        	
-        	/* local date time */
-        	LocalDateTime localNow = LocalDateTime.now();
-        	String dateString = fmt.format(localNow).toString();
-        	LocalDateTime localDateTime = LocalDateTime.parse(dateString, fmt);
-        	
-        	/* bot start date in local date time format */
-        	LocalDateTime localStartDate = LocalDateTime.parse(startDate, fmt);
-            
+
+			/* local date time */
+			LocalDateTime localNow = LocalDateTime.now();
+			String dateString = fmt.format(localNow).toString();
+			LocalDateTime localDateTime = LocalDateTime.parse(dateString, fmt);
+
+			/* bot start date in local date time format */
+			LocalDateTime localStartDate = LocalDateTime.parse(startDate, fmt);
+
 			if(localDateTime.compareTo(localStartDate) >= 0) {
-        		return true;
-        	} else {
-        		log.error("Bot is invalid as its start date is greator than the current date.");
-        	}
+				return true;
+			} else {
+				log.error("Bot is invalid as its start date is greator than the current date.");
+			}
 		} catch (Exception e) {
 			log.error("Error in checkBotStartDateValid: "+e.getMessage());
 		}
@@ -161,23 +180,23 @@ public class BotUtil {
 				log.info("Bot end date is empty.");
 				return true;
 			}
-			
+
 			DateTimeFormatter fmt = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'");
-        	
-        	/* local date time */
-        	LocalDateTime localNow = LocalDateTime.now();
-        	String dateString = fmt.format(localNow).toString();
-        	LocalDateTime localDateTime = LocalDateTime.parse(dateString, fmt);
-        	
-        	/* bot end date in local date time format */
-        	LocalDateTime localEndDate = LocalDateTime.parse(endDate, fmt);
-        	localEndDate = localEndDate.plusHours(23).plusMinutes(59).plusSeconds(59);
-        	
-        	if(localDateTime.compareTo(localEndDate) < 0) {
-        		return true;
-        	} else {
-        		log.error("Bot is invalid as its end date is less than the current date.");
-        	}
+
+			/* local date time */
+			LocalDateTime localNow = LocalDateTime.now();
+			String dateString = fmt.format(localNow).toString();
+			LocalDateTime localDateTime = LocalDateTime.parse(dateString, fmt);
+
+			/* bot end date in local date time format */
+			LocalDateTime localEndDate = LocalDateTime.parse(endDate, fmt);
+			localEndDate = localEndDate.plusHours(23).plusMinutes(59).plusSeconds(59);
+
+			if(localDateTime.compareTo(localEndDate) < 0) {
+				return true;
+			} else {
+				log.error("Bot is invalid as its end date is less than the current date.");
+			}
 		} catch (Exception e) {
 			log.error("Error in checkBotEndDateValid: "+e.getMessage());
 		}
@@ -213,6 +232,20 @@ public class BotUtil {
 	}
 
 	/**
+	 * Get adapter id from Bot Result Response
+ 	 * @param result
+	 * @return
+	 */
+	public static String getBotNodeAdapterId(Result result) {
+		if (result.getLogicIDs() != null && result.getLogicIDs().get(0) != null && result.getLogicIDs().get(0).getAdapter() != null
+				&& result.getLogicIDs().get(0).getAdapter().getId() != null) {
+			return result.getLogicIDs().get(0).getAdapter().getId();
+		}
+		return "";
+	}
+
+
+	/**
 	 * Get adapter id from bot json node
 	 * @param botNode
 	 * @return
@@ -231,6 +264,19 @@ public class BotUtil {
 				log.error("Exception in getBotNodeTags: "+ex.getMessage());
 			}
 
+			return list;
+		}
+		return null;
+	}
+
+	public static List<String> getBotNodeTags(Result result) {
+		if(result.getTags() != null) {
+			List<String> list = null;
+			try{
+				return result.getTags();
+			} catch (Exception ex) {
+				log.error("Exception in getBotNodeTags: "+ex.getMessage());
+			}
 			return list;
 		}
 		return null;
