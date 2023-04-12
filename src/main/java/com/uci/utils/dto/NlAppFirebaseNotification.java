@@ -8,5 +8,5 @@ import lombok.ToString;
 @Getter
 @Setter
 public class NlAppFirebaseNotification {
-    public String serviceKey;
+    private String serviceKey;
 }

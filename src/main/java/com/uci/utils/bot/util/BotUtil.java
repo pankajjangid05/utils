@@ -110,6 +110,16 @@ public class BotUtil {
 		return checkBotValid(status, startDate, endDate);
 	}
 
+	public static Boolean checkBotValidFromResult(Result result) {
+		String status = result.getStatus();
+		String startDate = result.getStartDate();
+		String endDate = result.getEndDate();
+
+		log.info("Bot Status: "+status+", Start Date: "+startDate+", End Date: "+endDate);
+
+		return checkBotValid(status, startDate, endDate);
+	}
+
 	/**
 	 * Check if bot is valid or not, by status, start date & end date
 	 * @param status

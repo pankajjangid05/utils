@@ -10,10 +10,10 @@ import java.util.Date;
 @Getter
 @ToString
 public class Transformer {
-    public String id;
-    public Date createdAt;
-    public Date updatedAt;
-    public Meta meta;
-    public String transformerId;
-    public String conversationLogicId;
+    private String id;
+    private Date createdAt;
+    private Date updatedAt;
+    private Meta meta;
+    private String transformerId;
+    private String conversationLogicId;
 }

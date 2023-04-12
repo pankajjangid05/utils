@@ -11,12 +11,12 @@ import java.util.Date;
 @Getter
 @ToString
 public class LogicID {
-    public String id;
-    public String name;
-    public Date createdAt;
-    public Date updatedAt;
-    public String description;
-    public String adapterId;
-    public ArrayList<Transformer> transformers;
-    public Adapter adapter;
+    private String id;
+    private String name;
+    private Date createdAt;
+    private Date updatedAt;
+    private String description;
+    private String adapterId;
+    private ArrayList<Transformer> transformers;
+    private Adapter adapter;
 }

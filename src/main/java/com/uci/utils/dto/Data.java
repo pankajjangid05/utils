@@ -10,5 +10,5 @@ import lombok.ToString;
 @Getter
 @Setter
 public class Data {
-    public String botId;
+    private String botId;
 }

@@ -10,11 +10,11 @@ import java.util.Date;
 @Setter
 @ToString
 public class Adapter {
-    public String id;
-    public Date createdAt;
-    public Date updatedAt;
-    public String channel;
-    public String provider;
-    public Config config;
-    public String name;
+    private String id;
+    private Date createdAt;
+    private Date updatedAt;
+    private String channel;
+    private String provider;
+    private Config config;
+    private String name;
 }

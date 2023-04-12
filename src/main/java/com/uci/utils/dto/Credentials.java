@@ -8,6 +8,6 @@ import lombok.ToString;
 @Setter
 @ToString
 public class Credentials {
-    public String vault;
-    public String variable;
+    private String vault;
+    private String variable;
 }

@@ -7,6 +7,7 @@ import com.github.benmanes.caffeine.cache.Cache;
 import com.inversoft.rest.ClientResponse;
 import com.uci.utils.bot.util.BotUtil;
 
+import com.uci.utils.dto.BotServiceResponse2;
 import com.uci.utils.dto.BotServiceResponse;
 import com.uci.utils.dto.Result;
 import io.fusionauth.client.FusionAuthClient;
@@ -17,7 +18,6 @@ import lombok.Getter;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.tuple.Pair;
-import org.springframework.http.MediaType;
 import org.springframework.stereotype.Service;
 import org.springframework.web.reactive.function.client.WebClient;
 import org.springframework.web.util.UriBuilder;
@@ -106,40 +106,40 @@ public class BotService {
         return CacheMono.lookup(key -> Mono.justOrEmpty(cache.getIfPresent(cacheKey) != null ? (Result) cache.getIfPresent(key) : null)
                         .map(Signal::next), cacheKey)
                 .onCacheMissResume(() -> webClient.get()
-                        .uri(builder -> builder.path("admin/bot/search/internal")
-                                .queryParam("perPage", 5)
-                                .queryParam("page", 1)
-                                .queryParam("match", true)
-                                .queryParam("name", botName)
-                                .build())
-                        .retrieve().bodyToMono(String.class).map(response -> {
-                            if (response != null) {
-                                log.info(response);
-                                try {
-                                    ObjectMapper mapper = new ObjectMapper();
-                                    BotServiceResponse botServiceResponse = mapper.readValue(response, BotServiceResponse.class);
-                                    log.info("Bot Service Response : " + botServiceResponse);
-                                    if (botServiceResponse != null && botServiceResponse.getResult() != null && botServiceResponse.getResult().size() > 0) {
-                                        return botServiceResponse.getResult().get(0);
-                                    }
+                                .uri(builder -> builder.path("admin/bot/search/internal")
+                                        .queryParam("perPage", 5)
+                                        .queryParam("page", 1)
+                                        .queryParam("match", true)
+                                        .queryParam("name", botName)
+                                        .build())
+                                .retrieve().bodyToMono(String.class).map(response -> {
+                                    if (response != null) {
+                                        log.info(response);
+                                        try {
+                                            ObjectMapper mapper = new ObjectMapper();
+                                            BotServiceResponse botServiceResponse = mapper.readValue(response, BotServiceResponse.class);
+                                            log.info("Bot Service Response : " + botServiceResponse);
+                                            if (botServiceResponse != null && botServiceResponse.getResult() != null && botServiceResponse.getResult().size() > 0) {
+                                                return botServiceResponse.getResult().get(0);
+                                            }
 //                                    ObjectMapper mapper = new ObjectMapper();
 //                                    JsonNode root = mapper.readTree(response);
 //                                    if (root.path("result") != null && root.path("result").get(0) != null && !root.path("result").get(0).isEmpty()) {
 //                                        return root.path("result").get(0);
 //                                    }
 //                                    return new ObjectMapper().createObjectNode();
-                                    return new Result();
-                                } catch (JsonProcessingException jsonMappingException) {
-                                    return new Result();
-                                }
+                                            return new Result();
+                                        } catch (JsonProcessingException jsonMappingException) {
+                                            return new Result();
+                                        }
 
-                            } else {
+                                    } else {
 //                                return new ObjectMapper().createObjectNode();
-                                return new Result();
-                            }
-                        })
-                        .doOnError(throwable -> log.info("Error in getting campaign: " + throwable.getMessage()))
-                        .onErrorReturn(new Result())
+                                        return new Result();
+                                    }
+                                })
+                                .doOnError(throwable -> log.info("Error in getting campaign: " + throwable.getMessage()))
+                                .onErrorReturn(new Result())
                 )
                 .andWriteWith((key, signal) -> Mono.fromRunnable(
                         () -> Optional.ofNullable(signal.get()).ifPresent(value -> cache.put(key, value))))
@@ -152,9 +152,9 @@ public class BotService {
      * @param botId - Bot Identifier
      * @return Application
      */
-    public Mono<JsonNode> getBotNodeFromId(String botId) {
+    public Mono<Result> getBotNodeFromId(String botId) {
         String cacheKey = "bot-node-by-id:" + botId;
-        return CacheMono.lookup(key -> Mono.justOrEmpty((JsonNode) cache.getIfPresent(cacheKey))
+        return CacheMono.lookup(key -> Mono.justOrEmpty((Result) cache.getIfPresent(cacheKey))
                         .map(Signal::next), cacheKey)
                 .onCacheMissResume(() -> webClient.get()
                         .uri(builder -> builder.path("admin/bot/" + botId).build())
@@ -164,10 +164,15 @@ public class BotService {
                                     if (response != null) {
                                         ObjectMapper mapper = new ObjectMapper();
                                         try {
-                                            JsonNode root = mapper.readTree(response);
-                                            if (root.path("result") != null && !root.path("result").isEmpty()) {
-                                                return root.path("result");
+                                            BotServiceResponse2 botServiceResponse = mapper.readValue(response, BotServiceResponse2.class);
+                                            log.info("Bot Service Response : " + botServiceResponse);
+                                            if (botServiceResponse != null && botServiceResponse.getResult() != null) {
+                                                return botServiceResponse.getResult();
                                             }
+//                                            JsonNode root = mapper.readTree(response);
+//                                            if (root.path("result") != null && !root.path("result").isEmpty()) {
+//                                                return root.path("result");
+//                                            }
                                             return null;
                                         } catch (JsonProcessingException e) {
                                             return null;
@@ -246,12 +251,21 @@ public class BotService {
                                 if (response != null) {
                                     ObjectMapper mapper = new ObjectMapper();
                                     try {
-                                        JsonNode root = mapper.readTree(response);
-                                        if (root.path("result") != null && root.path("result").get(0) != null
-                                                && !root.path("result").get(0).isEmpty()
-                                                && BotUtil.checkBotValidFromJsonNode(root.path("result").get(0))) {
-                                            return BotUtil.getBotNodeData(root.path("result").get(0), "id");
+                                        BotServiceResponse botServiceResponse = mapper.readValue(response, BotServiceResponse.class);
+                                        log.info("Bot Service Response : " + botServiceResponse);
+                                        if (botServiceResponse != null && botServiceResponse.getResult() != null && botServiceResponse.getResult().size() > 0
+                                                && BotUtil.checkBotValidFromResult(botServiceResponse.getResult().get(0))) {
+                                            String id = botServiceResponse.getResult().get(0).getId();
+                                            if (id != null && !id.isEmpty()) {
+                                                return id;
+                                            }
                                         }
+//                                        JsonNode root = mapper.readTree(response);
+//                                        if (root.path("result") != null && root.path("result").get(0) != null
+//                                                && !root.path("result").get(0).isEmpty()
+//                                                && BotUtil.checkBotValidFromResult(root.path("result").get(0))) {
+//                                            return BotUtil.getBotNodeData(root.path("result").get(0), "id");
+//                                        }
                                         return null;
                                     } catch (JsonProcessingException jsonMappingException) {
                                         return null;
@@ -293,13 +307,14 @@ public class BotService {
                                     if (response != null) {
                                         ObjectMapper mapper = new ObjectMapper();
                                         try {
-                                            JsonNode root = mapper.readTree(response);
-                                            String responseCode = root.path("responseCode").asText();
-                                            if (root.path("result") != null && root.path("result").path("status") != null
-                                                    && (root.path("result").path("status").asText().equalsIgnoreCase("USER_ADDED")
-                                                    || root.path("result").path("status").asText().equalsIgnoreCase("USER_EXISTS"))
-                                            ) {
-                                                String userID = root.path("result").path("userId").asText();
+                                            BotServiceResponse2 addUserResponse = mapper.readValue(response, BotServiceResponse2.class);
+                                            log.info("Bot Service Response : " + addUserResponse);
+
+                                            if (addUserResponse != null && addUserResponse.getResult() != null
+                                                    && addUserResponse.getResult().getStatus() != null
+                                                    && (addUserResponse.getResult().getStatus().equalsIgnoreCase("USER_ADDED")
+                                                    || addUserResponse.getResult().getStatus().equalsIgnoreCase("USER_EXISTS"))) {
+                                                String userID = addUserResponse.getResult().getUserId();
                                                 return Pair.of(true, userID);
                                             }
                                             return Pair.of(false, "");
@@ -321,9 +336,9 @@ public class BotService {
      * @param adapterID
      * @return
      */
-    public Mono<JsonNode> getAdapterByID(String adapterID) {
+    public Mono<Result> getAdapterByID(String adapterID) {
         String cacheKey = "adapter-by-id: " + adapterID;
-        return CacheMono.lookup(key -> Mono.justOrEmpty(cache.getIfPresent(cacheKey) != null ? (JsonNode) cache.getIfPresent(key) : null)
+        return CacheMono.lookup(key -> Mono.justOrEmpty(cache.getIfPresent(cacheKey) != null ? (Result) cache.getIfPresent(key) : null)
                         .map(Signal::next), cacheKey)
                 .onCacheMissResume(() -> webClient.get().uri(new Function<UriBuilder, URI>() {
                             @Override
@@ -331,16 +346,24 @@ public class BotService {
                                 URI uri = builder.path("admin/adapter/" + adapterID).build();
                                 return uri;
                             }
-                        }).retrieve().bodyToMono(String.class).map(new Function<String, JsonNode>() {
+                        }).retrieve().bodyToMono(String.class).map(new Function<String, Result>() {
                             @Override
-                            public JsonNode apply(String response) {
+                            public Result apply(String response) {
                                 if (response != null) {
                                     ObjectMapper mapper = new ObjectMapper();
                                     try {
-                                        JsonNode root = mapper.readTree(response);
-                                        if (root != null && root.path("result") != null && root.path("result").path("id") != null && !root.path("result").path("id").asText().isEmpty()) {
-                                            return root.path("result");
+                                        BotServiceResponse2 botServiceResponse = mapper.readValue(response, BotServiceResponse2.class);
+                                        log.info("Bot Service Response : " + botServiceResponse);
+                                        if (botServiceResponse != null && botServiceResponse.getResult() != null
+                                                && botServiceResponse.getResult().getId() != null && !botServiceResponse.getResult().getId().isEmpty()) {
+                                            return botServiceResponse.getResult();
                                         }
+//
+//                                        JsonNode root = mapper.readTree(response);
+//                                        if (root != null && root.path("result") != null && root.path("result").path("id") != null
+//                                                && !root.path("result").path("id").asText().isEmpty()) {
+//                                            return root.path("result");
+//                                        }
                                         return null;
                                     } catch (JsonProcessingException jsonMappingException) {
                                         return null;
@@ -366,14 +389,20 @@ public class BotService {
      */
     public Mono<JsonNode> getAdapterCredentials(String adapterID) {
         String cacheKey = "adapter-credentials: " + adapterID;
-        return getAdapterByID(adapterID).map(new Function<JsonNode, Mono<JsonNode>>() {
+        return getAdapterByID(adapterID).map(new Function<Result, Mono<JsonNode>>() {
             @Override
-            public Mono<JsonNode> apply(JsonNode adapter) {
-                log.info("adapter: " + adapter);
-                if (adapter != null) {
-                    String vaultKey;
+            public Mono<JsonNode> apply(Result adapterResult) {
+                log.info("adapter: " + adapterResult);
+                if (adapterResult != null) {
+                    String vaultKey = null;
                     try {
-                        vaultKey = adapter.path("config").path("credentials").path("variable").asText();
+                        if (adapterResult.getConfig() != null && adapterResult.getConfig().getCredentials() != null
+                                && adapterResult.getConfig().getCredentials().getVariable() != null) {
+                            vaultKey = adapterResult.getConfig().getCredentials().getVariable();
+                        } else {
+                            log.error("Null values found while getAdapterCredentials : " + adapterResult);
+                        }
+//                        vaultKey = adapterResult.path("config").path("credentials").path("variable").asText();
                     } catch (Exception ex) {
                         log.error("Exception in fetching adapter variable from json node: " + ex.getMessage());
                         vaultKey = null;
@@ -382,6 +411,8 @@ public class BotService {
                     if (vaultKey != null && !vaultKey.isEmpty()) {
                         return getVaultCredentials(vaultKey);
                     }
+                } else {
+                    log.error("getAdapterByID result null found : " + adapterResult);
                 }
                 return Mono.just(null);
             }
@@ -426,31 +457,38 @@ public class BotService {
      * @param secretKey - vault key Identifier
      * @return Application
      */
-    public Mono<JsonNode> getVaultCredentials(String secretKey) {
+    public Mono<String> getVaultCredentials(String secretKey) {
         String adminToken = System.getenv("VAULT_SERVICE_TOKEN");
         if (adminToken == null || adminToken.isEmpty()) {
             return Mono.just(null);
         }
         WebClient webClient = WebClient.builder().baseUrl(System.getenv("VAULT_SERVICE_URL")).build();
         String cacheKey = "adapter-credentials-by-id: " + secretKey;
-        return CacheMono.lookup(key -> Mono.justOrEmpty(cache.getIfPresent(cacheKey) != null ? (JsonNode) cache.getIfPresent(key) : null)
+        return CacheMono.lookup(key -> Mono.justOrEmpty(cache.getIfPresent(cacheKey) != null ? (String) cache.getIfPresent(key) : null)
                         .map(Signal::next), cacheKey)
                 .onCacheMissResume(() -> webClient.get()
                         .uri(builder -> builder.path("admin/secret/" + secretKey).build())
                         .headers(httpHeaders -> {
-                            httpHeaders.set("ownerId", "8f7ee860-0163-4229-9d2a-01cef53145ba");
-                            httpHeaders.set("ownerOrgId", "org1");
+                            httpHeaders.set("ownerId", "8f7ee860-0163-4229-9d2a-01cef53145ba"); // TODO Need to change
+                            httpHeaders.set("ownerOrgId", "org1"); // TODO Need to change
                             httpHeaders.set("admin-token", adminToken);
                         })
                         .retrieve().bodyToMono(String.class).map(response -> {
                             if (response != null) {
                                 ObjectMapper mapper = new ObjectMapper();
                                 try {
-                                    Map<String, String> credentials = new HashMap<String, String>();
-                                    JsonNode root = mapper.readTree(response);
-                                    if (root.path("result") != null && root.path("result").path(secretKey) != null) {
-                                        return root.path("result").path(secretKey);
+                                    BotServiceResponse2 botServiceResponse = mapper.readValue(response, BotServiceResponse2.class);
+                                    log.info("Bot Service Response : " + botServiceResponse);
+                                    if (botServiceResponse != null && botServiceResponse.getResult() != null
+                                            && botServiceResponse.getResult().getNlAppFirebaseNotification() != null && botServiceResponse.getResult().getNlAppFirebaseNotification().getServiceKey() != null) {
+                                        return botServiceResponse.getResult().getNlAppFirebaseNotification().getServiceKey();
                                     }
+
+//                                    Map<String, String> credentials = new HashMap<String, String>();
+//                                    JsonNode root = mapper.readTree(response);
+//                                    if (root.path("result") != null && root.path("result").path(secretKey) != null) {
+//                                        return root.path("result").path(secretKey);
+//                                    }
                                     return null;
                                 } catch (JsonProcessingException e) {
                                     return null;

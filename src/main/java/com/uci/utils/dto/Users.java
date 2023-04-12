@@ -10,16 +10,16 @@ import java.util.Date;
 @Getter
 @Setter
 public class Users {
-    public String id;
-    public Date createdAt;
-    public Date updatedAt;
-    public String name;
-    public Object description;
-    public int count;
-    public Object category;
-    public String allServiceID;
-    public String byPhoneServiceID;
-    public Object byIDServiceID;
-    public Object botId;
-    public All all;
+    private String id;
+    private Date createdAt;
+    private Date updatedAt;
+    private String name;
+    private Object description;
+    private int count;
+    private Object category;
+    private String allServiceID;
+    private String byPhoneServiceID;
+    private Object byIDServiceID;
+    private Object botId;
+    private All all;
 }

@@ -12,22 +12,23 @@ import java.util.Date;
 @Getter
 @ToString
 public class Result {
-    public String id;
-    public Date createdAt;
-    public Date updatedAt;
-    public String name;
-    public String startingMessage;
-    public String ownerID;
-    public String ownerOrgID;
-    public String purpose;
-    public String description;
-    public String startDate;
-    public String endDate;
-    public String status;
-    public ArrayList<String> tags;
-    public ArrayList<Users> users;
-    public ArrayList<LogicID> logicIDs;
+    private String id;
+    private Date createdAt;
+    private Date updatedAt;
+    private String name;
+    private String startingMessage;
+    private String ownerID;
+    private String ownerOrgID;
+    private String purpose;
+    private String description;
+    private String startDate;
+    private String endDate;
+    private String status;
+    private ArrayList<String> tags;
+    private ArrayList<Users> users;
+    private ArrayList<LogicID> logicIDs;
     @JsonProperty("nl-app-firebase-notification")
-    public NlAppFirebaseNotification nlAppFirebaseNotification;
-
+    private NlAppFirebaseNotification nlAppFirebaseNotification;
+    private String userId;
+    private Config config;
 }

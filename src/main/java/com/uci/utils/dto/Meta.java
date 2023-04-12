@@ -5,18 +5,21 @@ import lombok.Setter;
 import lombok.ToString;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 
 @ToString
 @Getter
 @Setter
 public class Meta {
-    public String body;
-    public String form;
-    public String title;
-    public String formID;
-    public ArrayList<HiddenField> hiddenFields;
-    public String serviceClass;
-    public String templateType;
-    public Data data;
-    public String type;
+    private String body;
+    private String form;
+    private String title;
+    private String formID;
+    private ArrayList<HiddenField> hiddenFields;
+    private String serviceClass;
+    private String templateType;
+    private HashMap<String, String> data;
+    private String type;
+    private ArrayList<String> params;
+    private String templateId;
 }

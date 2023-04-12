@@ -10,10 +10,10 @@ import java.util.Date;
 @Getter
 @Setter
 public class All {
-    public String id;
-    public Date createdAt;
-    public Date updatedAt;
-    public String type;
-    public Config config;
-    public Object name;
+    private String id;
+    private Date createdAt;
+    private Date updatedAt;
+    private String type;
+    private Config config;
+    private Object name;
 }
