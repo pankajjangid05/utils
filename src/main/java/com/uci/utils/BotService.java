@@ -7,9 +7,7 @@ import com.github.benmanes.caffeine.cache.Cache;
 import com.inversoft.rest.ClientResponse;
 import com.uci.utils.bot.util.BotUtil;
 
-import com.uci.utils.dto.BotServiceResponse2;
-import com.uci.utils.dto.BotServiceResponse;
-import com.uci.utils.dto.Result;
+import com.uci.utils.dto.*;
 import io.fusionauth.client.FusionAuthClient;
 import io.fusionauth.domain.Application;
 import io.fusionauth.domain.api.ApplicationResponse;
@@ -28,7 +26,6 @@ import reactor.cache.CacheMono;
 
 import java.net.URI;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -358,7 +355,7 @@ public class BotService {
                                                 && botServiceResponse.getResult().getId() != null && !botServiceResponse.getResult().getId().isEmpty()) {
                                             return botServiceResponse.getResult();
                                         }
-//
+
 //                                        JsonNode root = mapper.readTree(response);
 //                                        if (root != null && root.path("result") != null && root.path("result").path("id") != null
 //                                                && !root.path("result").path("id").asText().isEmpty()) {
@@ -387,11 +384,11 @@ public class BotService {
      * @param adapterID
      * @return
      */
-    public Mono<JsonNode> getAdapterCredentials(String adapterID) {
+    public Mono<NotificationService> getAdapterCredentials(String adapterID) {
         String cacheKey = "adapter-credentials: " + adapterID;
-        return getAdapterByID(adapterID).map(new Function<Result, Mono<JsonNode>>() {
+        return getAdapterByID(adapterID).map(new Function<Result, Mono<NotificationService>>() {
             @Override
-            public Mono<JsonNode> apply(Result adapterResult) {
+            public Mono<NotificationService> apply(Result adapterResult) {
                 log.info("adapter: " + adapterResult);
                 if (adapterResult != null) {
                     String vaultKey = null;
@@ -410,15 +407,16 @@ public class BotService {
 
                     if (vaultKey != null && !vaultKey.isEmpty()) {
                         return getVaultCredentials(vaultKey);
+//                        return Mono.just(null);
                     }
                 } else {
                     log.error("getAdapterByID result null found : " + adapterResult);
                 }
                 return Mono.just(null);
             }
-        }).flatMap(new Function<Mono<JsonNode>, Mono<? extends JsonNode>>() {
+        }).flatMap(new Function<Mono<NotificationService>, Mono<? extends NotificationService>>() {
             @Override
-            public Mono<? extends JsonNode> apply(Mono<JsonNode> n) {
+            public Mono<? extends NotificationService> apply(Mono<NotificationService> n) {
                 log.info("Mono FlatMap Level 1");
                 return n;
             }
@@ -457,14 +455,14 @@ public class BotService {
      * @param secretKey - vault key Identifier
      * @return Application
      */
-    public Mono<String> getVaultCredentials(String secretKey) {
+    public Mono<NotificationService> getVaultCredentials(String secretKey) {
         String adminToken = System.getenv("VAULT_SERVICE_TOKEN");
         if (adminToken == null || adminToken.isEmpty()) {
             return Mono.just(null);
         }
         WebClient webClient = WebClient.builder().baseUrl(System.getenv("VAULT_SERVICE_URL")).build();
         String cacheKey = "adapter-credentials-by-id: " + secretKey;
-        return CacheMono.lookup(key -> Mono.justOrEmpty(cache.getIfPresent(cacheKey) != null ? (String) cache.getIfPresent(key) : null)
+        return CacheMono.lookup(key -> Mono.justOrEmpty(cache.getIfPresent(cacheKey) != null ? (NotificationService) cache.getIfPresent(key) : null)
                         .map(Signal::next), cacheKey)
                 .onCacheMissResume(() -> webClient.get()
                         .uri(builder -> builder.path("admin/secret/" + secretKey).build())
@@ -477,11 +475,11 @@ public class BotService {
                             if (response != null) {
                                 ObjectMapper mapper = new ObjectMapper();
                                 try {
-                                    BotServiceResponse2 botServiceResponse = mapper.readValue(response, BotServiceResponse2.class);
-                                    log.info("Bot Service Response : " + botServiceResponse);
-                                    if (botServiceResponse != null && botServiceResponse.getResult() != null
-                                            && botServiceResponse.getResult().getNlAppFirebaseNotification() != null && botServiceResponse.getResult().getNlAppFirebaseNotification().getServiceKey() != null) {
-                                        return botServiceResponse.getResult().getNlAppFirebaseNotification().getServiceKey();
+                                    VaultResponse vaultResponse = mapper.readValue(response, VaultResponse.class);
+                                    log.info("getVaultCredentials Response : " + vaultResponse);
+                                    if (vaultResponse != null && vaultResponse.getResult() != null
+                                            && vaultResponse.getResult().get(secretKey) != null && vaultResponse.getResult().get(secretKey).getServiceKey() != null) {
+                                        return vaultResponse.getResult().get(secretKey);
                                     }
 
 //                                    Map<String, String> credentials = new HashMap<String, String>();

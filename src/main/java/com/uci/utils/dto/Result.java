@@ -27,8 +27,8 @@ public class Result {
     private ArrayList<String> tags;
     private ArrayList<Users> users;
     private ArrayList<LogicID> logicIDs;
-    @JsonProperty("nl-app-firebase-notification")
-    private NlAppFirebaseNotification nlAppFirebaseNotification;
     private String userId;
     private Config config;
+    private String provider;
+    private String channel;
 }
